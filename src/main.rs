@@ -29,33 +29,29 @@ fn check_files(file_name: &str) -> bool {
     return Path::new(file_name).exists();
 }
 
-fn parse_file(file_name: &str) -> error::Result<()> {
-    let path = Path::new(file_name);
-    println!("path: {:#?}", path);
-    let buffer = fs::read(path)?;
-    let mut obj: Object = goblin::Object::Unknown(0);
-
-    match Object::parse(&buffer)? {
+fn parse_file<'a>(buffer: &'a Vec<u8>, obj: &'a mut Object<'a>) -> error::Result<&'a Object<'a>> {
+    match Object::parse(buffer)? {
         Object::Elf(elf) => {
-            obj = goblin::Object::Elf(elf);
+            *obj = goblin::Object::Elf(elf);
         }
         Object::PE(pe) => {
-            obj = goblin::Object::PE(pe);
+            *obj = goblin::Object::PE(pe);
         }
         Object::Mach(mach) => {
-            obj = goblin::Object::Mach(mach);
+            *obj = goblin::Object::Mach(mach);
         }
         Object::Archive(archive) => {
-            obj = goblin::Object::Archive(archive);
+            *obj = goblin::Object::Archive(archive);
         }
         Object::Unknown(magic) => println!("unknown magic: {:#x}", magic),
     }
     println!("archive: {:#?}", obj);
 
-    Ok(())
+    Ok(obj)
 }
 
 fn main() -> std::io::Result<()> {
+    let mut obj: Object = goblin::Object::Unknown(0);
     let args: Vec<String> = env::args().collect();
     println!("{:?}", args);
 
@@ -70,7 +66,11 @@ fn main() -> std::io::Result<()> {
     // buf_reader.read_to_string(&mut contents)?;
     // println!("contents : {:?}",contents);
 
-    let result = parse_file(file_name);
+    let path = Path::new(file_name);
+    println!("path: {:#?}", path);
+    let buffer: Vec<u8> = fs::read(path)?;
+
+    let result = parse_file(&buffer, &mut obj);
     println!("{:?}", result);
 
     // let input = InputFile {name:file_name,format:Format::EXE};
