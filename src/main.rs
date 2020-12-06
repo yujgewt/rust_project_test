@@ -50,6 +50,7 @@ fn parse_file<'a>(buffer: &'a Vec<u8>, obj: &'a mut Object<'a>) -> error::Result
     Ok(obj)
 }
 
+
 fn main() -> std::io::Result<()> {
     let mut obj: Object = goblin::Object::Unknown(0);
     let args: Vec<String> = env::args().collect();
