@@ -4,14 +4,14 @@ Seed generator
      - recognize file formats...
 
 */
+use goblin::{error, Object};
 use std::env;
 use std::fs;
-use std::path::Path;
-use std::process;
 use std::fs::File;
 use std::io::prelude::*;
 use std::io::BufReader;
-use goblin::{error, Object};
+use std::path::Path;
+use std::process;
 
 #[derive(Debug)]
 enum Format {
@@ -29,57 +29,49 @@ fn check_files(file_name: &str) -> bool {
     return Path::new(file_name).exists();
 }
 
+fn parse_file(file_name: &str) -> error::Result<()> {
+    let path = Path::new(file_name);
+    println!("path: {:#?}", path);
+    let buffer = fs::read(path)?;
+    let mut obj: Object = goblin::Object::Unknown(0);
 
+    match Object::parse(&buffer)? {
+        Object::Elf(elf) => {
+            obj = goblin::Object::Elf(elf);
+        }
+        Object::PE(pe) => {
+            obj = goblin::Object::PE(pe);
+        }
+        Object::Mach(mach) => {
+            obj = goblin::Object::Mach(mach);
+        }
+        Object::Archive(archive) => {
+            obj = goblin::Object::Archive(archive);
+        }
+        Object::Unknown(magic) => println!("unknown magic: {:#x}", magic),
+    }
+    println!("archive: {:#?}", obj);
 
-fn run (file_name:&str) -> error::Result<()> {
-            let path = Path::new(file_name);
-            println!("path: {:#?}", path);
-            let buffer = fs::read(path)?;
-            match Object::parse(&buffer)? {
-                Object::Elf(elf) => {
-                    println!("elf: {:#?}", &elf);
-                },
-                Object::PE(pe) => {
-                    println!("pe: {:#?}", &pe);
-                },
-                Object::Mach(mach) => {
-                    println!("mach: {:#?}", &mach);
-                },
-                Object::Archive(archive) => {
-                    println!("archive: {:#?}", &archive);
-                },
-                Object::Unknown(magic) => { println!("unknown magic: {:#x}", magic) }
-            }
-  
     Ok(())
 }
-
-
 
 fn main() -> std::io::Result<()> {
     let args: Vec<String> = env::args().collect();
     println!("{:?}", args);
-
 
     let file_name = &args[1];
     println!("file_name : {:?}", file_name);
 
     println!("try to open the file.");
     let mut file = File::open(file_name)?;
-    
     println!("try to read the file.");
     let mut buf_reader = BufReader::new(file);
     let mut contents = String::new();
     // buf_reader.read_to_string(&mut contents)?;
     // println!("contents : {:?}",contents);
 
-    run(file_name);   
- 
- 
-
-
-
-
+    let result = parse_file(file_name);
+    println!("{:?}", result);
 
     // let input = InputFile {name:file_name,format:Format::EXE};
     // println!("input : {:?}",input);
@@ -90,9 +82,5 @@ fn main() -> std::io::Result<()> {
     //     process::exit(0);
     // }
 
-
     // let contents = fs::read_to_string(file_name).expect("Something went wrong reading the file.");
-    
-
-    
 }
