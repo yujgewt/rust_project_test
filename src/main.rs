@@ -12,6 +12,7 @@ use std::io::prelude::*;
 use std::io::BufReader;
 use std::path::Path;
 use std::process;
+use std::any::type_name;
 
 #[derive(Debug)]
 enum Format {
@@ -36,6 +37,7 @@ fn parse_file<'a>(buffer: &'a Vec<u8>, obj: &'a mut Object<'a>) -> error::Result
         }
         Object::PE(pe) => {
             *obj = goblin::Object::PE(pe);
+             
         }
         Object::Mach(mach) => {
             *obj = goblin::Object::Mach(mach);
@@ -72,7 +74,7 @@ fn main() -> std::io::Result<()> {
     let buffer: Vec<u8> = fs::read(path)?;
 
     let result = parse_file(&buffer, &mut obj);
-    println!("{:?}", result);
+    println!("{:?}", type_name(result.ok()) );
 
     // let input = InputFile {name:file_name,format:Format::EXE};
     // println!("input : {:?}",input);
